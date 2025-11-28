@@ -631,3 +631,159 @@ You now understand Python build systems enough for interviews + real DevOps work
 
 ---
 
+```
+Maven → pom.xml (project level)
+Maven → settings.xml (system/repo/credentials level)
+```
+
+So now you want:
+
+```
+What is the Python equivalent of settings.xml?
+Where do we store repo URLs, credentials, mirrors, config?
+```
+
+Perfect.
+There is **NO single settings.xml in Python**, but Python has **three equivalents depending on purpose**.
+
+---
+
+# 🔥 Python Equivalents of Maven settings.xml
+
+| Purpose                       | Maven file                   | Python equivalent              |
+| ----------------------------- | ---------------------------- | ------------------------------ |
+| Repository index, mirrors     | **settings.xml → <mirrors>** | **pip.conf / pip.ini**         |
+| Authentication for publishing | **settings.xml → <servers>** | **.pypirc**                    |
+| Build metadata config         | N/A (outside pom)            | **setup.cfg / pyproject.toml** |
+
+We will break them 1 by 1.
+
+---
+
+# 1️⃣ **pip.conf / pip.ini** → Equivalent of Repository & Mirrors (settings.xml)
+
+### Linux/macOS:
+
+```
+~/.config/pip/pip.conf
+```
+
+### Windows:
+
+```
+%APPDATA%\pip\pip.ini
+```
+
+Sample file:
+
+```ini
+[global]
+index-url = https://pypi.org/simple
+extra-index-url = https://private.repo/simple
+timeout = 30
+trusted-host = private.repo
+```
+
+This is **direct equivalent of Maven <mirrors> and <proxy> config**.
+
+Meaning:
+
+| Field           | Equivalent to Maven          |
+| --------------- | ---------------------------- |
+| index-url       | `<mirror><url>`              |
+| extra-index-url | additional repos             |
+| trusted-host    | mirror authentication bypass |
+| timeout         | network config               |
+
+If you work with **Artifactory, Nexus, private PyPI**, you configure it here.
+
+---
+
+# 2️⃣ **.pypirc** → Equivalent of `servers` block in settings.xml
+
+Used when **uploading** packages or wheels (just like deploying artifacts via Maven deploy).
+
+Location:
+
+```
+~/.pypirc
+```
+
+Example:
+
+```ini
+[distutils]
+index-servers = internal
+
+[internal]
+repository = https://nexus.company.com/repository/pypi/
+username = myuser
+password = mypassword
+```
+
+Equivalent to:
+
+```xml
+<servers>
+  <server>
+    <id>internal</id>
+    <username>myuser</username>
+    <password>mypassword</password>
+  </server>
+</servers>
+```
+
+🔥 Used when you run:
+
+```
+twine upload -r internal dist/*
+```
+
+---
+
+# 3️⃣ **setup.cfg / pyproject.toml** → Optional, but like global build metadata
+
+These extend or replace setup.py for build configs.
+
+Example `pyproject.toml`:
+
+```toml
+[project]
+name = "myapp"
+version = "1.0.0"
+dependencies = [
+    "flask==3.0.0",
+    "requests==2.31.0"
+]
+```
+
+Not needed for all projects — this is **modern replacement** for setup.py metadata.
+
+---
+
+# SUMMARY FLASHCARD (Important)
+
+```
+pip.conf   = Python mirror + repo + index config
+.pypirc    = Upload credentials (like <servers>)
+requirements.txt = dependency list
+setup.py / pyproject.toml = packaging metadata
+```
+
+---
+
+# Which one you configure in CI/CD pipelines?
+
+| Task                                         | File used                      |
+| -------------------------------------------- | ------------------------------ |
+| Installing packages from internal Nexus repo | `pip.conf`                     |
+| Uploading `.whl` or `.tar.gz` to repo        | `.pypirc`                      |
+| Packaging metadata                           | `setup.py` or `pyproject.toml` |
+| Installing dependencies                      | `requirements.txt`             |
+
+So yes, Python *does* have equivalents to Maven settings.xml — just distributed based on purpose.
+
+---
+
+
+
