@@ -989,3 +989,233 @@ Everything between `<project ...>` and `</project>` is your POM.
 
 ---
 
+## 📌 What Are Maven Profiles?
+
+Profiles allow you to **change Maven behavior/environment without modifying code**.
+You can have:
+
+* different database URLs
+* different dependencies
+* different build configs
+* different packaging types
+* different deployment repos
+
+Based on environment: **dev / qa / prod**
+
+You activate it via:
+
+```
+mvn clean install -Pdev
+```
+
+or permanently inside `settings.xml`.
+
+---
+
+# 🔥 Full Example POM with Profiles (We Will Break Down Entirely)
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.example.app</groupId>
+    <artifactId>profile-demo</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <properties>
+        <spring.version>3.2.1</spring.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+    </dependencies>
+
+    <profiles>
+
+        <profile>
+            <id>dev</id>
+            <properties>
+                <db.url>jdbc:mysql://dev-server:3306/devdb</db.url>
+                <log.level>DEBUG</log.level>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+
+        <profile>
+            <id>prod</id>
+            <properties>
+                <db.url>jdbc:mysql://prod-server:3306/proddb</db.url>
+                <log.level>ERROR</log.level>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <version>3.1.2</version>
+                        <configuration>
+                            <skipTests>false</skipTests>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
+    </profiles>
+
+</project>
+```
+
+---
+
+# 🔥 Now we break down the new things inside this POM
+
+## 🟢 `<profiles>` (container tag)
+
+```
+<profiles>
+    ...profiles inside...
+</profiles>
+```
+
+* `<profiles>` is the **parent tag**
+* It means **multiple profiles are defined inside**
+* Nothing executes here — it just groups them
+
+---
+
+## 🟡 `<profile>` (one environment definition)
+
+```
+<profile>
+   ...
+</profile>
+```
+
+* **One single profile block**
+* You can have as many `<profile>` entries as you want
+* Each profile changes Maven build behavior differently
+
+---
+
+## 🟣 `<id>` — **Profile Name** (VERY IMPORTANT)
+
+```
+<id>dev</id>
+```
+
+* The name of the profile
+* You use this to activate it
+* Command: `mvn package -Pdev`
+
+Profile 2:
+
+```
+<id>prod</id>
+```
+
+Command: `mvn clean install -Pprod`
+
+⚠ `id` must be unique for each profile.
+
+---
+
+## 🔵 `<properties>` inside a profile
+
+```
+<properties>
+    <db.url>jdbc:mysql://dev-server/devdb</db.url>
+    <log.level>DEBUG</log.level>
+</properties>
+```
+
+* Defines **environment-specific values**
+* These variables can be used anywhere in POM using `${db.url}`
+* dev profile uses DEBUG logs
+* prod profile uses ERROR logs
+
+So properties change per environment.
+
+---
+
+## 🔥 `<activation>` (Automatic profile selection)
+
+```
+<activation>
+    <activeByDefault>true</activeByDefault>
+</activation>
+```
+
+* This means:
+  **If no profile is selected → use this one automatically**
+* Usually `dev` is default
+* prod must be chosen only when needed:
+
+```
+mvn package -Pprod
+```
+
+🚀 Interview line:
+
+> *Activation decides when a profile wakes up.*
+
+---
+
+## 🟠 `<build>` inside a profile
+
+```
+<build>
+    <plugins>
+        <plugin>
+            <artifactId>maven-surefire-plugin</artifactId>
+```
+
+This means:
+
+🔹 Only when **prod profile** is active →
+Maven will use this **test execution plugin**
+
+So *build behavior changes based on environment*.
+
+In dev profile we don’t specify `<build>` → so default config runs.
+
+---
+
+# 🧠 Why are profiles so powerful?
+
+| Feature                | Benefit                            |
+| ---------------------- | ---------------------------------- |
+| Different DB config    | dev/test/prod DB URLs              |
+| Different log level    | DEBUG in dev, ERROR in prod        |
+| Different plugins      | Run tests in prod, skip in dev     |
+| Different repositories | Local repo for dev, Nexus for prod |
+| Different packaging    | JAR for dev, WAR for prod          |
+
+Using profiles, **one codebase → many build behaviors**.
+
+---
+
+# 🏆 Interview-grade one-liners
+
+Use these and interviewers will nod:
+
+| Line                                                                       |
+| -------------------------------------------------------------------------- |
+| *Profiles helps Maven behave differently without changing code.*           |
+| *We use `-Pdev` or `-Pprod` to activate different build environments.*     |
+| *activation makes profiles auto-selectable, otherwise they are manual.*    |
+| *Profiles can change properties, dependencies, plugins or even packaging.* |
+
+---
+
